@@ -107,3 +107,20 @@ Diff:
      · entry ['probe-key' : ''] -> ['probe-key' : '']
 ````
 
+### The problem
+
+````
+    public static Map wrapKeysIfNeeded(Map map, JaversType keyType) {
+        if (hasCustomValueComparator(keyType)) {   // -> yes it has 
+            CustomComparableType customType = (CustomComparableType) keyType;
+            return (Map)map.entrySet().stream().collect(Collectors.toMap(
+                    e -> new HashWrapper(((Map.Entry)e).getKey(), keyType::equals, customType::valueToString),
+                    e -> ((Map.Entry)e).getValue())); // -> cause of NPE since the value mapper will return the value as being null
+        }
+        return map;
+    }
+````
+#### The open JDK bug
+
+* [JDK-8261865-Unexpected NullPointerException from Collectors.toMap](https://bugs.openjdk.org/browse/JDK-8261865)
+* Tested with: `EclipseAdoptium.Temurin.17, Release version: 17.0.3.7`
