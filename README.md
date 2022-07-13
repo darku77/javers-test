@@ -120,6 +120,40 @@ Diff:
         return map;
     }
 ````
+
+#### Patch with Byte-Buddy
+* Provide in a new class the patched version of that method:
+````
+    public static Map wrapKeysIfNeeded(Map map, JaversType keyType) {
+        if (hasCustomValueComparator(keyType)) {
+            CustomComparableType customType = (CustomComparableType) keyType;
+
+            Map res = new HashMap();
+            map.entrySet().forEach(e -> {
+                res.put(new HashWrapperPatched(((Map.Entry)e).getKey(), keyType::equals, customType::valueToString), ((Map.Entry<?, ?>) e).getValue());
+            });
+           return res;
+
+        //   OLD CODE
+        //            return (Map)map.entrySet().stream().collect(Collectors.toMap(
+        //                    e -> new HashWrapperPatched(((Map.Entry)e).getKey(), keyType::equals, customType::valueToString),
+        //                    e -> ((Map.Entry)e).getValue()));
+        }
+        return map;
+    }
+````
+* Injecting with Byte-Buddy
+````
+    private static void medkit() {
+        ByteBuddyAgent.install();
+
+        new ByteBuddy().redefine(HashWrapper.class)
+                .method(named("wrapKeysIfNeeded"))
+                .intercept(MethodDelegation.to(HashWrapperPatched.class))
+                .make()
+                .load(HashWrapper.class.getClassLoader(), ClassReloadingStrategy.fromInstalledAgent());
+    }
+````
 #### The open JDK bug
 
 * [JDK-8261865-Unexpected NullPointerException from Collectors.toMap](https://bugs.openjdk.org/browse/JDK-8261865)

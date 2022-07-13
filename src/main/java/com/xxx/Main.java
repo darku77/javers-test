@@ -13,7 +13,6 @@ import org.javers.core.diff.appenders.HashWrapper;
 import org.javers.core.diff.custom.NullAsBlankStringComparator;
 import org.javers.core.metamodel.annotation.Entity;
 import org.javers.core.metamodel.annotation.Id;
-import org.javers.core.metamodel.type.CustomComparableType;
 
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.agent.ByteBuddyAgent;
