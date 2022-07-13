@@ -1,5 +1,6 @@
 package com.xxx;
 
+import static net.bytebuddy.matcher.ElementMatchers.named;
 import static org.javers.core.diff.ListCompareAlgorithm.LEVENSHTEIN_DISTANCE;
 
 import java.util.HashMap;
@@ -8,9 +9,16 @@ import java.util.Map;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
+import org.javers.core.diff.appenders.HashWrapper;
 import org.javers.core.diff.custom.NullAsBlankStringComparator;
 import org.javers.core.metamodel.annotation.Entity;
 import org.javers.core.metamodel.annotation.Id;
+import org.javers.core.metamodel.type.CustomComparableType;
+
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.agent.ByteBuddyAgent;
+import net.bytebuddy.dynamic.loading.ClassReloadingStrategy;
+import net.bytebuddy.implementation.MethodDelegation;
 
 /**
  * @author catalin
@@ -18,6 +26,9 @@ import org.javers.core.metamodel.annotation.Id;
 public class Main {
 
     public static void main(String[] args) {
+
+        medkit();
+
         System.out.println("START");
 
         final var probe1 = getProbe1();
@@ -33,6 +44,16 @@ public class Main {
         final Diff compare = initStandard().compare(probe1, probe2);
         System.out.println(compare.prettyPrint());
 
+    }
+
+    private static void medkit() {
+        ByteBuddyAgent.install();
+
+        new ByteBuddy().redefine(HashWrapper.class)
+                .method(named("wrapKeysIfNeeded"))
+                .intercept(MethodDelegation.to(HashWrapperPatched.class))
+                .make()
+                .load(HashWrapper.class.getClassLoader(), ClassReloadingStrategy.fromInstalledAgent());
     }
 
     public static Javers initWithSmartStringComparison() {
